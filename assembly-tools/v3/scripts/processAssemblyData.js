@@ -91,9 +91,7 @@ const otherSkus = [
                 });
 
                 if (dupePart !== undefined){
-                    //duplicateParts++;
                     duplicatePartOutput.write(standardOutput);
-                    //Prevent duplicate from being written by escaping the forEach
                     return false;
                 }
 
@@ -103,9 +101,7 @@ const otherSkus = [
                 });
 
                 if (dupeCarton !== undefined){
-                    //duplicateCartons++;
                     duplicateCartonOutput.write(standardOutput);
-                    //Prevent duplicate from being written by escaping the forEach
                     return false;
                 }
 
@@ -115,9 +111,7 @@ const otherSkus = [
                 });
 
                 if (dupeTracking !== undefined){
-                    //duplicateCartons++;
                     duplicateTrackingOutput.write(standardOutput);
-                    //Prevent duplicate from being written by escaping the forEach
                     return false;
                 }
 
