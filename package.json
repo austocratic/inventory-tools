@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "assembly-process": "node ./assembly-tools/v3/scripts/processAssemblyData",
-    "assembly-process-single": "node ./assembly-tools/v3/scripts/processSingleWorkOrder"
+    "process-single-workorder": "node ./assembly-tools/v3/scripts/processSingleWorkOrder",
+    "process-all-workorders": "node ./assembly-tools/v3/scripts/processAllWorkOrders"
   },
   "dependencies": {
     "axios": "^0.18.0",
