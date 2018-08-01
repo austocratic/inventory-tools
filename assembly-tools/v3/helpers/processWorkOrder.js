@@ -189,6 +189,19 @@ const processWorkOrder = async (workOrder, getScaleParts, products, codeTypes, s
                 eachInspection.trackingNumber = eachInspection.partCode;
             }
 
+            //Check each new assembly record against DB records: check if carton already exists but with a different part code
+            let dupeTrackingInDB = _.find(formattedGetScaleParts, eachGetScalePart =>{
+                return (eachGetScalePart.part_code !== eachInspection.partCode && eachGetScalePart.return_label_tracking_number === eachInspection.trackingNumber)
+            });
+
+            if (dupeTrackingInDB !== undefined){
+                duplicateTracking++;
+                //Use the part code as the tracking number if there is a duplicate
+                duplicateTrackingOutput.write(`${eachInspection.inspectionSku},${eachInspection.partCode},${eachInspection.cartonCode},${eachInspection.cartonSku},${eachInspection.trackingNumber},${eachInspection.skuMatch}\n`);
+                //After logging, update the tracking #
+                eachInspection.trackingNumber = eachInspection.partCode;
+            }
+
             const standardOutput = `${eachInspection.inspectionSku},${eachInspection.partCode},${eachInspection.cartonCode},${eachInspection.cartonSku},${eachInspection.trackingNumber},${eachInspection.skuMatch}\n`;
 
             //Log the complete output
@@ -279,16 +292,6 @@ const processWorkOrder = async (workOrder, getScaleParts, products, codeTypes, s
                 duplicateCartonOutput.write(standardOutput);
                 //Prevent duplicate from being written by escaping the forEach
                 return false;
-            }
-
-            //Check each new assembly record against DB records: check if carton already exists but with a different part code
-            let dupeTrackingInDB = _.find(formattedGetScaleParts, eachGetScalePart =>{
-                return (eachGetScalePart.part_code !== eachInspection.partCode && eachGetScalePart.return_label_tracking_number === eachInspection.trackingNumber)
-            });
-
-            if (dupeTrackingInDB !== undefined){
-                duplicateTracking++;
-                duplicateTrackingOutput.write(standardOutput);
             }
 
             //Create insert query and summary

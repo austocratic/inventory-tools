@@ -111,8 +111,11 @@ const otherSkus = [
                 });
 
                 if (dupeTracking !== undefined){
+                    //Log the issue
                     duplicateTrackingOutput.write(standardOutput);
-                    return false;
+
+                    //Now modify the tracking to equal the part code but don't escape (we still want it to write to insert query file)
+                    eachInspection.trackingNumber = eachInspection.partCode;
                 }
 
                 //Insert any scans that were not escaped
