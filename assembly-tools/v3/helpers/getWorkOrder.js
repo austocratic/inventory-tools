@@ -6,7 +6,8 @@ const fs = require('fs');
 const assembly = require('../controllers/assembly');
 
 const ASSEMBLY_PREFIX = 'http://d3v.gs/0/';
-const USPS_PREFIX = '420940633101';
+const USPS_PREFIX_1 = '420940633101';
+const USPS_PREFIX_2 = '420662141537';
 
 
 const getWorkOrder = (workOrder, workOrderResultsData, products, codeTypes) => {
@@ -88,7 +89,7 @@ const getWorkOrder = (workOrder, workOrderResultsData, products, codeTypes) => {
                                 inspectionResult.cartonSku = eachInspectionStep.stepResultContent.code.toUpperCase();
                                 break;
                             case trackingNumberCodeType.id:
-                                inspectionResult.trackingNumber = eachInspectionStep.stepResultContent.code.replace(USPS_PREFIX, "");
+                                inspectionResult.trackingNumber = eachInspectionStep.stepResultContent.code.replace(USPS_PREFIX_1, "").replace(USPS_PREFIX_2, "");
                                 break;
                         }
                     }

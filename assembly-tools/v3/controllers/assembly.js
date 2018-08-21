@@ -4,10 +4,14 @@ const axios = require('axios');
 
 const token = process.env.ASSEMBLY_TOKEN;
 
-const getWorkOrderResult = async id => {
-    return await axios({
+const getWorkOrderResult = (id, offset, limit) => {
+
+    offset = (offset ? `&offset=${offset}` : '');
+    limit = (limit ? `&limit=${limit}` : '');
+
+    return axios({
         method: 'get',
-        url: `https://asm.hellopython.com/api/work-order-result/?workorder=${id}`,
+        url: `https://asm.hellopython.com/api/work-order-result/?workorder=${id}${offset}${limit}`,
         headers: {
             Authorization: `Token ${token}`
         }

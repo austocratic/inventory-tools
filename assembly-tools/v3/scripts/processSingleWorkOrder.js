@@ -2,14 +2,11 @@
 
 require('dotenv').config();
 
-const _ = require('lodash');
-const fs = require('fs');
-
 const assembly = require('../controllers/assembly');
 const processWorkOrders = require('../helpers/processWorkOrder').processWorkOrders;
 
 //PURPOSE: process a single Work Order by name:
-const workOrderName = '9928';
+const workOrderName = '10011';
 
 (async()=>{
     console.log('Initiating processSingleWorkOrder script');
@@ -33,7 +30,9 @@ const workOrderName = '9928';
 
     let workOrders = [foundWorkOrder];
 
-    const processWorkOrderResults = await processWorkOrders(workOrders);
+    await processWorkOrders(workOrders);
+
+    console.log('Info: done processingSingleWorkOrder()')
 })();
 
 
