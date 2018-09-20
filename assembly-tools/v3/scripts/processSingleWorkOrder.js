@@ -2,11 +2,11 @@
 
 require('dotenv').config();
 
-const assembly = require('../controllers/assembly');
-const processWorkOrders = require('../helpers/processWorkOrder').processWorkOrders;
+const assembly = require('../libraries/assembly');
+const processWorkOrders = require('../controllers/processWorkOrders').processWorkOrders;
 
 //PURPOSE: process a single Work Order by name:
-const workOrderName = '10011';
+const workOrderName = 'JP10062 new';
 
 (async()=>{
     console.log('Initiating processSingleWorkOrder script');

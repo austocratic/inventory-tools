@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "process-single-workorder": "node ./assembly-tools/v3/scripts/processSingleWorkOrder",
-    "process-all-workorders": "node ./assembly-tools/v3/scripts/processAllWorkOrders"
+    "process-all-workorders": "node ./assembly-tools/v3/scripts/processAllWorkOrders",
+    "close-workorders": "node ./assembly-tools/v3/scripts/closeWorkOrders"
   },
   "dependencies": {
     "axios": "^0.18.0",

@@ -3,14 +3,14 @@
 const _ = require('lodash');
 const fs = require('fs');
 
-const assembly = require('../controllers/assembly');
+const assembly = require('../libraries/assembly');
 
 const ASSEMBLY_PREFIX = 'http://d3v.gs/0/';
 const USPS_PREFIX_1 = '420940633101';
 const USPS_PREFIX_2 = '420662141537';
 
 
-const getWorkOrder = (workOrder, workOrderResultsData, products, codeTypes) => {
+const getWorkOrder = (workOrder, workOrderResultsData, products) => {
 
     if (workOrder === undefined){
         console.log('ERROR found an undefined workOrderStatus: ', workOrder.data)
@@ -20,8 +20,10 @@ const getWorkOrder = (workOrder, workOrderResultsData, products, codeTypes) => {
         console.log(`Info: No work order progress for ${workOrder.name}`)
     }
 
+    //TODO THIS IS THE BUG
+    /*
     const partCodeType = codeTypes.find(eachCodeType=>{
-        return eachCodeType.name === 'AssemblyID'
+        return eachCodeType.name === 'AssemblyID' || eachCodeType.name === 'part_code'
     });
     const cartonCodeType = codeTypes.find(eachCodeType=>{
         return eachCodeType.name === 'carton_code'
@@ -31,7 +33,7 @@ const getWorkOrder = (workOrder, workOrderResultsData, products, codeTypes) => {
     });
     const trackingNumberCodeType = codeTypes.find(eachCodeType=>{
         return eachCodeType.name === 'return_label_tracking_number'
-    });
+    });*/
 
     return workOrderResultsData
     //Filter out inspections where the product ID is no longer valid
@@ -76,21 +78,49 @@ const getWorkOrder = (workOrder, workOrderResultsData, products, codeTypes) => {
                         return;
                     }
 
-                    if (eachInspectionStep.stepResultContent.codeTypeId){
+                    //Determine if that step had a code scan
+                    if (eachInspectionStep.stepResultContent.code) {
 
-                        switch(eachInspectionStep.stepResultContent.codeTypeId) {
-                            case partCodeType.id:
-                                inspectionResult.partCode = eachInspectionStep.stepResultContent.code.toLowerCase().replace(ASSEMBLY_PREFIX, "");
-                                break;
-                            case cartonCodeType.id:
-                                inspectionResult.cartonCode = eachInspectionStep.stepResultContent.code.toLowerCase().replace(ASSEMBLY_PREFIX, "");
-                                break;
-                            case skuCodeType.id:
-                                inspectionResult.cartonSku = eachInspectionStep.stepResultContent.code.toUpperCase();
-                                break;
-                            case trackingNumberCodeType.id:
-                                inspectionResult.trackingNumber = eachInspectionStep.stepResultContent.code.replace(USPS_PREFIX_1, "").replace(USPS_PREFIX_2, "");
-                                break;
+                        if (eachInspectionStep.stepResultContent.codeTypeName !== undefined) {
+
+                            switch (eachInspectionStep.stepResultContent.codeTypeName) {
+                                case 'AssemblyID':
+                                    inspectionResult.partCode = eachInspectionStep.stepResultContent.code.toLowerCase().replace(ASSEMBLY_PREFIX, "");
+                                    break;
+                                case 'part_code':
+                                    inspectionResult.partCode = eachInspectionStep.stepResultContent.code.toLowerCase().replace(ASSEMBLY_PREFIX, "");
+                                    break;
+                                case 'carton_code':
+                                    inspectionResult.cartonCode = eachInspectionStep.stepResultContent.code.toLowerCase().replace(ASSEMBLY_PREFIX, "");
+                                    break;
+                                case 'sku':
+                                    inspectionResult.cartonSku = eachInspectionStep.stepResultContent.code.toUpperCase();
+                                    break;
+                                case 'return_label_tracking_number':
+                                    inspectionResult.trackingNumber = eachInspectionStep.stepResultContent.code.replace(USPS_PREFIX_1, "").replace(USPS_PREFIX_2, "");
+                                    break;
+                            }
+                        } else if (eachInspectionStep.stepResultContent.codeTypeId !== undefined) {
+
+                            switch (eachInspectionStep.stepResultContent.codeTypeId) {
+                                case 1:
+                                    inspectionResult.partCode = eachInspectionStep.stepResultContent.code.toLowerCase().replace(ASSEMBLY_PREFIX, "");
+                                    break;
+                                case 8:
+                                    inspectionResult.partCode = eachInspectionStep.stepResultContent.code.toLowerCase().replace(ASSEMBLY_PREFIX, "");
+                                    break;
+                                case 3:
+                                    inspectionResult.cartonCode = eachInspectionStep.stepResultContent.code.toLowerCase().replace(ASSEMBLY_PREFIX, "");
+                                    break;
+                                case 5:
+                                    inspectionResult.cartonSku = eachInspectionStep.stepResultContent.code.toUpperCase();
+                                    break;
+                                case 4:
+                                    inspectionResult.trackingNumber = eachInspectionStep.stepResultContent.code.replace(USPS_PREFIX_1, "").replace(USPS_PREFIX_2, "");
+                                    break;
+                            }
+                        } else {
+                            console.log(`Warning: a step had a code, but no .codeTypeName, or .codeTypeId. work order: ${workOrder.name} inspection ID: ${eachInspection._id}, index: ${eachInspectionStep.stepIndex}`);
                         }
                     }
                 });
