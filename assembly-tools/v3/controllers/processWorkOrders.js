@@ -6,7 +6,7 @@ const fs = require('fs');
 const assembly = require('../libraries/assembly');
 const icracked = require('../libraries/icracked');
 const getWorkOrder = require('../helpers/getWorkOrder').getWorkOrder;
-const logInpsections = require('./logInspections').logInspections;
+const logInspectionsReturnAlreadyInsertedWorkOrders = require('./logInspectionsReturnAlreadyInsertedWorkOrders').logInspectionsReturnAlreadyInsertedWorkOrders;
 
 const manualSkus = [
     {shopify_sku: "PADA2-WH020"},
@@ -35,22 +35,19 @@ const manualSkus = [
 ];
 
 const processWorkOrders = async (workOrders) =>{
-
-    console.log('Info: getting assembly products');
+    console.log('Info: called processWorkOrders()');
 
     //Get products
     const productsResults = await assembly.getProducts();
     const products = productsResults.data;
 
-    console.log('Info: getting assembly code types');
-
     //Get code types
+    //console.log('Info: getting assembly code types');
     //const codeTypesResults = await assembly.getCodeTypes();
     //const codeTypes = codeTypesResults.data;
 
-    console.log('Info: getting iCracked get_scale_parts');
-
     //Get iCracked DB data
+    console.log('Info: getting iCracked get_scale_parts');
     const getScaleParts = await icracked.fetchGetScaleParts();
 
     //Update DB response format
@@ -68,7 +65,6 @@ const processWorkOrders = async (workOrders) =>{
     });
 
     console.log('Info: getting iCracked skus');
-
     let dbSkus = await icracked.fetchSkus();
 
     //Merge the "manual" skus into the skus from shopify_service_tasks table (since this table does not contain everything yet)
@@ -131,17 +127,66 @@ const processWorkOrders = async (workOrders) =>{
             console.log(`Error: when getting & formatting data for work order: ${eachWorkOrder.name} error: ${err}`)
         }
     }
-    /*
-    console.log(JSON.stringify(allWorkOrderInspections));
 
-    allWorkOrderInspections.forEach(eachWorkOrderInspection=>{
-
-        if (eachWorkOrderInspection === undefined){
-            console.log('DEBUG found undefined value')
-        }
-    });*/
     //Validate & log inspections
-    logInpsections(allWorkOrderInspections, formattedGetScaleParts, skus);
+    const alreadyInsertedWorkOrders = logInspectionsReturnAlreadyInsertedWorkOrders(allWorkOrderInspections, formattedGetScaleParts, skus);
+
+    //-------Close certain open orders-------
+    
+    //Iterate through each open work order to see if it should be closed
+    for (const eachWorkOrder of workOrders) {
+    
+        //Find the open work order's matching work order in alreadyInsertedWorkOrders (if it exists)
+        const matchingInsertedWorkOrder = _.find(alreadyInsertedWorkOrders, {'name': eachWorkOrder.name})
+        //If no match, skip
+        if (matchingInsertedWorkOrder === undefined){
+            console.log(`Info: could not find a matching already inserted WO for ${eachWorkOrder.name}`);
+            continue;
+        }
+
+        //Create a new array of not deleted work order skus.  These are the counts per sku we expect for inspections
+        const workOrderSkus = eachWorkOrder.tasks
+            //Filter for only not deleted products
+            .filter(eachWorkOrderSku=>{
+                return !eachWorkOrderSku.product_info.is_deleted
+            })
+            .map(eachWorkOrderSku=>{
+                return {
+                    sku: eachWorkOrderSku.product_info.name,
+                    count: eachWorkOrderSku.count
+                }
+            })
+
+        //Set a flag to determine if work order should be closed.  Loop below will determine if flag 
+        let shouldCloseWO = true;
+
+        //For each work order sku, determine if that quantity was inspected by comparing to matchingInsertedWorkOrder
+        workOrderSkus.forEach(eachWorkOrderSku=>{
+            // console.log(`DEBUG checking work order SKU ${eachWorkOrderSku.sku} with quantity: ${eachWorkOrderSku.count}`);
+            // console.log(`DEBUG matchingInsertedWorkOrder had count of ${matchingInsertedWorkOrder.skus[eachWorkOrderSku.sku]}`);
+
+            //If no matching inspections for a particular SKU, don't close
+            if (matchingInsertedWorkOrder.skus[eachWorkOrderSku.sku] === undefined){
+                console.log(`Info: Assembly WO ${eachWorkOrder.name}'s SKU ${eachWorkOrderSku.sku} has not had any inspections inserted into DB, not closing this WO`);
+                shouldCloseWO = false;
+                return;
+            }
+
+            //If the sku quantitiy inserted into DB is less than the sku quantity on the work order, then keep the work order open
+            if (matchingInsertedWorkOrder.skus[eachWorkOrderSku.sku] < eachWorkOrderSku.count){
+                console.log(`Info: Assembly WO ${eachWorkOrder.name}'s SKU ${eachWorkOrderSku.sku} had a count of ${matchingInsertedWorkOrder.skus[eachWorkOrderSku.sku]} which is not >= ${eachWorkOrderSku.count}, not closing this WO`);
+                shouldCloseWO = false;
+                return;
+            }
+        })
+
+        //If flag is still true, close the WO
+        if (shouldCloseWO){
+            console.log(`Info: closing WO ${eachWorkOrder.name}`);
+            const closeWorkOrderResponse = await assembly.completeWorkOrder(eachWorkOrder.id);
+            console.log('Info: successfully closed WO: ', closeWorkOrderResponse.data.name);
+        }
+    }
 
     console.log('Info: completed running processWorkOrders()');
     return true;

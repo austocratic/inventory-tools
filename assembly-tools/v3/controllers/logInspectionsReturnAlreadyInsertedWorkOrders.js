@@ -21,7 +21,7 @@ const COMPONENT_CODES = {
 };
 
 
-const logInspections = (allWorkOrderInspections, formattedGetScaleParts, skus) =>{
+const logInspectionsReturnAlreadyInsertedWorkOrders = (allWorkOrderInspections, formattedGetScaleParts, skus) =>{
 
     //Filter out undefined values
     //TODO need to research why we get a few undefined values.  Possibly getWorkOrderAndFormat() in processWorkOrders.js
@@ -316,27 +316,49 @@ const logInspections = (allWorkOrderInspections, formattedGetScaleParts, skus) =
 
     //--------Build summary files for Work Orders-------
 
-    let workOrderNumbers = Object.keys(workOrderSummary);
+    const workOrderNumbers = Object.keys(workOrderSummary);
 
     //Use the workOrderSummary object to log details of each work order
-    workOrderNumbers.forEach(eachWorkOrderNumber=>{
+    //const alreadyInsertedWorkOrders = workOrderNumbers.forEach(eachWorkOrderNumber=>{
+    return workOrderNumbers
+        //Filter out the "allData proprerty" this property is a summary
+        .filter(eachWorkOrderNumber=>{
+            return eachWorkOrderNumber !== "allData"
+        })
+        .map(eachWorkOrderNumber=>{
 
-        //Ignore the "allData" property (not a WO)
-        if (eachWorkOrderNumber === "allData"){
-            return;
-        }
+            //Log to master summary file
+            masterSummaryFile.write(`\nWork Order: ${eachWorkOrderNumber}\n\n`);
 
-        //Log to master summary file
-        masterSummaryFile.write(`\nWork Order: ${eachWorkOrderNumber}\n\n`);
-        writeWorkOrderProperties(workOrderSummary[eachWorkOrderNumber].alreadyInserted, masterSummaryFile);
+            writeWorkOrderProperties(workOrderSummary[eachWorkOrderNumber].alreadyInserted, masterSummaryFile);
 
-        //Create a summary file for this work order
-        let workOrderSummaryFile = fs.createWriteStream(`${OUTPUT_ROOT_FOLDER}${currentTimeStamp}/workOrders/${eachWorkOrderNumber}/summary.txt`);
+            //Create a summary file for this work order
+            let workOrderSummaryFile = fs.createWriteStream(`${OUTPUT_ROOT_FOLDER}${currentTimeStamp}/workOrders/${eachWorkOrderNumber}/summary.txt`);
 
-        workOrderSummaryFile.write(`WORK ORDER SUMMARY - ${eachWorkOrderNumber}\n\n`);
+            workOrderSummaryFile.write(`WORK ORDER SUMMARY - ${eachWorkOrderNumber}\n\n`);
 
-        writeWorkOrderProperties(workOrderSummary[eachWorkOrderNumber], workOrderSummaryFile);
-    });
+            writeWorkOrderProperties(workOrderSummary[eachWorkOrderNumber], workOrderSummaryFile);
+
+            //let workOrderSkusOnly = workOrderSummary[eachWorkOrderNumber].alreadyInserted
+            //let workOrderSkusOnly = _.omit(workOrderSummary[eachWorkOrderNumber].alreadyInserted,'log');
+
+            return {
+                name: eachWorkOrderNumber,
+                skus: _.omit(workOrderSummary[eachWorkOrderNumber].alreadyInserted,'log')
+            }
+        });
+
+    //TODO TESTING
+    //Figuring out what all is in the workOrderSummary object and figuring out how to return it without log keys
+    //I should create a new summary and return it excluding the .log properties  The forEach above can add to it before returning
+    // (()=>{
+
+    //     let woKeys = Object.keys(workOrderSummary['10201'].alreadyInserted)
+
+    //     woKeys.forEach((eachKey)=>{
+    //         console.log('Each key: ', eachKey);
+    //     })
+    // })()
 
 
 };
@@ -346,10 +368,14 @@ const writeWorkOrderProperties = (propsToWrite, fileToWriteTo) => {
 
     _.forEach(propsToWrite, (value, key) => {
 
-        //Skip "log" key
+        //Skip "log" key.  The log value is the .txt file containing data
+        //TODO I should eventually remove the log files from the object and move into a different object
         if(key === "log"){
             return;
         }
+
+        // console.log('Key: ', key);
+        // console.log('Value: ', value);
 
         //If value is an object, then process objects contents
         if (typeof value === "object"){
@@ -364,6 +390,6 @@ const writeWorkOrderProperties = (propsToWrite, fileToWriteTo) => {
 
 
 module.exports = {
-    logInspections
+    logInspectionsReturnAlreadyInsertedWorkOrders
 };
 

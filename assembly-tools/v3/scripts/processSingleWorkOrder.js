@@ -6,7 +6,7 @@ const assembly = require('../libraries/assembly');
 const processWorkOrders = require('../controllers/processWorkOrders').processWorkOrders;
 
 //PURPOSE: process a single Work Order by name:
-const workOrderName = 'JP10062 new';
+const workOrderName = '10201';
 
 (async()=>{
     console.log('Initiating processSingleWorkOrder script');
@@ -14,6 +14,8 @@ const workOrderName = 'JP10062 new';
     const workOrderResults = await assembly.getWorkOrders();
 
     const workOrderResultsData = workOrderResults.data;
+
+    //console.log(JSON.stringify(workOrderResultsData));
 
     if (workOrderResultsData.length === 0){
         console.log('ERROR no work orders found!')

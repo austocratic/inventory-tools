@@ -5,7 +5,7 @@ const _ = require('lodash');
 
 const assembly = require('../libraries/assembly');
 
-const workOrdersToClose = ['10067', '10040', 'JP10050', 'JP10064', '10070'];
+const workOrdersToClose = ['10201'];
 
 //PURPOSE: mark work orders as 'complete' in assembly system.  Input work order names into 'workOrdersToClose' array
 (async()=>{
